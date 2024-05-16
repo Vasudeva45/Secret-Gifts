@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details</title>
+    <link rel="stylesheet" href="checkout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Roboto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hando&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amfibia:wght@600&family=Roboto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bronto:wght@700&display=swap">
+    <style>
+        #map {
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="headDiv1">
+            <h1 onclick="goToHomePage()">Secret Gifts</h1>
+        </div>
+        <div class="headDiv2">
+            <h4 onclick="goToHomePage()">Home</h4>
+            <h4>Shop</h4>
+            <h4 onclick="gotoOrdersPage()">Orders</h4>
+            <h4>Contact</h4>
+        </div>
+        <div class="headDiv3">
+            <h1 onclick="gotoOthersPage()">Hurrah</h1>
+        </div>
+    </header>
+    <h1>Item Details</h1>
+    <div id="itemDetails">
+        <!-- Item details will be displayed here -->
+    </div>
+    <div class="checkout-form">
+        <h2>Checkout</h2>
+        <form id="checkoutForm">
+            <div class="input-row">
+                <div class="input-col">
+                    <input type="text" name="name" placeholder="Name" required>
+                </div>
+                <div class="input-col">
+                    <input type="tel" name="phone" placeholder="Phone Number" required>
+                </div>
+                <div class="input-col">
+                    <input type="text" id="address" name="address" placeholder="Address" required>
+                </div>
+            </div>
+            <div class="input-row">
+                <div class="input-col">
+                    <input type="text" id="city" name="city" placeholder="City" required>
+                </div>
+                <div class="input-col">
+                    <input type="text" id="state" name="state" placeholder="State" required>
+                </div>
+                <div class="input-col">
+                    <input type="number" id="pincode" name="pincode" placeholder="Pin Code" required>
+                </div>
+            </div>
+            <div class="input-row">
+                <div class="input-col full-width">
+                    <textarea name="customization" placeholder="Customization" rows="4"></textarea>
+                </div>
+                <div id="map"></div>
+
+            </div>
+            <div id="priceDetails">
+                <p style="color: black;">Item Price: <span id="itemPrice"></span></p>
+                <p style="color: black;">Discount: <span id="discount"></span></p>
+                <p style="color: black;">Customization Price: <span id="customizationPrice">0</span></p>
+            </div>
+            <button type="submit" class="buy-now-btn">Buy Now</button>
+        </form>
+    </div>
+    <div class="hor-Line"></div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-heading">
+                <h4>Secret Gifts</h4>
+            </div>
+            <div class="footer-links">
+                <h4>Home</h4>
+                <h4>Shop</h4>
+                <h4>Occasions</h4>
+                <h4>Contact</h4>
+            </div>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-info">
+            <p>&copy; 2024 Secret Gifts. All rights reserved.</p>
+        </div>
+    </footer>
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <h2>Order Placed Successfully!</h2>
+            <p style="color: black;">Thank you for your order! You'll receive a call from our team within 36 hours.</p>
+            <p style="color: black;">We'll make sure to add an extra sprinkle of joy to your purchase!</p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin fa-4x"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPwCvhAiDvEDrkcYiVxb4NBVXH8RbjCfo",
+            authDomain: "giftwish-express.firebaseapp.com",
+            projectId: "giftwish-express",
+            storageBucket: "giftwish-express.appspot.com",
+            messagingSenderId: "710515976717",
+            appId: "1:710515976717:web:62a83bb498295fb1e80344",
+            measurementId: "G-DGS43RPDDD"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+        var itemData;
+
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const itemId = urlParams.get('itemId');
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            if (itemId) {
+                loadingOverlay.style.display = 'block';
+
+                firebase.firestore().collection('items').doc(itemId).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            itemData = doc.data();
+                            document.getElementById('itemDetails').innerHTML = `
+                            <h2>${itemData.name}</h2>
+                            <img src="${itemData.itemImage}" alt="${itemData.name}">
+                            <p>Description: ${itemData.description}</p>
+                            <p>Price: ${itemData.price}</p>
+                            <p>Category: ${itemData.category}</p>
+                            <p>Availability: ${itemData.availability}</p>
+                            <!-- Add any other details you want to display -->
+                        `;
+
+                            document.getElementById('itemPrice').textContent = itemData.price;
+
+                            const buyNowForm = document.getElementById('checkoutForm');
+                            buyNowForm.addEventListener('submit', async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(buyNowForm);
+                                const formObject = {};
+                                formData.forEach((value, key) => {
+                                    formObject[key] = value;
+                                });
+
+                                let totalPrice = itemData.price * 100;
+                                const customization = formData.get('customization');
+                                if (customization) {
+                                    totalPrice += 50 * 100;
+                                }
+
+                                document.getElementById('customizationPrice').textContent = customization ? '50' : '0';
+
+                                try {
+                                    loadingOverlay.style.display = 'block';
+                                    const response = await fetch('http://localhost:3000/create-order', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            amount: totalPrice,
+                                        }),
+                                    }).then((res) => res.json());
+
+                                    const orderData = response;
+
+                                    const options = {
+                                        key: 'rzp_test_CDtfWK3Ko8Mh4w',
+                                        amount: orderData.amount,
+                                        currency: 'INR',
+                                        order_id: orderData.id,
+                                        name: 'GIftWish Express',
+                                        description: 'Order Payment',
+                                        image: 'YOUR_COMPANY_LOGO',
+                                        handler: async function (response) {
+                                            try {
+                                                await db.collection('orders').add({
+                                                    ...formObject,
+                                                    itemId: itemId,
+                                                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                                                    paymentId: response.razorpay_payment_id,
+                                                    paidAmount: totalPrice / 100,
+                                                    status: 'ordered',
+                                                });
+                                                buyNowForm.reset();
+                                                document.getElementById('orderModal').style.display = 'block';
+                                            } catch (error) {
+                                                console.error('Error adding order to Firestore:', error);
+                                                alert('An error occurred. Please try again later.');
+                                            } finally {
+                                                loadingOverlay.style.display = 'none';
+                                            }
+                                        },
+                                        prefill: {
+                                            name: formObject.name,
+                                            email: 'test@example.com',
+                                        },
+                                        theme: {
+                                            color: '#3399cc'
+                                        }
+                                    };
+                                    const rzp1 = new Razorpay(options);
+                                    rzp1.open();
+                                } catch (error) {
+                                    console.error('Error processing payment:', error);
+                                    alert('An error occurred while processing payment. Please try again later.');
+                                    loadingOverlay.style.display = 'none';
+                                }
+                            });
+
+                        } else {
+                            console.log('No such item!');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error getting item details:', error);
+                    })
+                    .finally(() => {
+                        loadingOverlay.style.display = 'none';
+                    });
+            } else {
+                console.error('Item ID is empty or undefined');
+            }
+            const customizationTextarea = document.querySelector('textarea[name="customization"]');
+            customizationTextarea.addEventListener('input', () => {
+                const customizationPrice = document.getElementById('customizationPrice');
+                const customization = customizationTextarea.value.trim();
+
+                if (customization) {
+                    customizationPrice.textContent = '50';
+                } else {
+                    customizationPrice.textContent = '0';
+                }
+            });
+        });
+
+        var map = L.map('map').setView([0, 0], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var marker = L.marker([0, 0], { draggable: true }).addTo(map);
+
+        map.on('moveend', function () {
+            updateAddressFromMarker();
+        });
+
+        marker.on('dragend', function (event) {
+            var markerCoordinates = marker.getLatLng();
+            map.setView([markerCoordinates.lat, markerCoordinates.lng], 13);
+            updateAddressFromMarker();
+        });
+
+        function updateAddressFromMarker() {
+            var markerCoordinates = marker.getLatLng();
+            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + markerCoordinates.lat + '&lon=' + markerCoordinates.lng)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('address').value = data.display_name;
+                    const addressComponents = data.address;
+                    const city = addressComponents.city || addressComponents.town || addressComponents.village || '';
+                    const state = addressComponents.state || '';
+                    const pincode = addressComponents.postcode || '';
+                    document.getElementById('city').value = city;
+                    document.getElementById('state').value = state;
+                    document.getElementById('pincode').value = pincode;
+                })
+                .catch(error => console.error('Error fetching address:', error));
+        }
+
+        navigator.geolocation.getCurrentPosition(function (position) {
+            map.setView([position.coords.latitude, position.coords.longitude], 13);
+            marker.setLatLng([position.coords.latitude, position.coords.longitude]);
+        });
+
+        function goToHomePage() {
+            window.location.href = "index.html";
+        }
+
+        function gotoOrdersPage() {
+            window.location.href = "orders.html";
+        }
+
+        function gotoOthersPage() {
+            window.location.href = "secondpage.html?emotion=others";
+        }
+    </script>
+</body>
+
+</html>

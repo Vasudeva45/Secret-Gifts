@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondPage</title>
+    <link rel="stylesheet" href="secondpage.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Roboto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hando&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amfibia:wght@600&family=Roboto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bronto:wght@700&display=swap">
+</head>
+
+<body>
+    <div>
+        <header>
+            <div class="headDiv1">
+                <h1 onclick="goToHomePage()">Secret Gifts</h1>
+            </div>
+            <div class="headDiv2">
+                <h4 onclick="goToHomePage()">Home</h4>
+                <h4 onclick="goToHomePage()">Shop</h4>
+                <h4 onclick="gotoOrdersPage()">Orders</h4>
+                <h4>Contact</h4>
+            </div>
+            <div class="headDiv3">
+                <h1 onclick="gotoOthersPage()">Hurrah</h1>
+            </div>
+        </header>
+
+        <div class="emotion-header">
+            <h1 style="color: white;">Emotion: <span id="emotion"></span></h1>
+        </div>
+        <div class="filter-container">
+            <div class="filter">
+                <label for="sort">Sort by:</label>
+                <select id="sort">
+                    <option value="priceLowToHigh">Price Low to High</option>
+                    <option value="priceHighToLow">Price High to Low</option>
+                    <option value="nameAZ">Name A to Z</option>
+                    <option value="nameZA">Name Z to A</option>
+                    <option value="categoryAZ">Category A to Z</option>
+                    <option value="categoryZA">Category Z to A</option>
+                    <option value="availability">Availability</option>
+                </select>
+            </div>
+            <div class="filter">
+                <label for="priceRange" style="color: white;">Price Range:</label>
+                <input type="range" id="priceRange" min="0" max="10000" step="100" value="0">
+                <span id="priceOutput" style="color: white;"></span><span style="color: white;"> Rupees</span>
+            </div>
+        </div>
+        <div id="emotionDetails"></div>
+        <div class="hor-Line"></div>
+        <footer>
+            <div class="footer-container">
+                <div class="footer-heading">
+                    <h4>Secret Gifts</h4>
+                </div>
+                <div class="footer-links">
+                    <h4>Home</h4>
+                    <h4>Shop</h4>
+                    <h4>Occasions</h4>
+                    <h4>Contact</h4>
+                </div>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-info">
+                <p>&copy; 2024 Secret Gifts. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin fa-4x"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPwCvhAiDvEDrkcYiVxb4NBVXH8RbjCfo",
+            authDomain: "giftwish-express.firebaseapp.com",
+            projectId: "giftwish-express",
+            storageBucket: "giftwish-express.appspot.com",
+            messagingSenderId: "710515976717",
+            appId: "1:710515976717:web:62a83bb498295fb1e80344",
+            measurementId: "G-DGS43RPDDD"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        var db = firebase.firestore();
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var emotion = urlParams.get('emotion');
+
+        document.getElementById('emotion').textContent = emotion;
+
+        function renderItems(sortOption, priceRange) {
+            document.getElementById('loadingOverlay').style.display = 'block';
+
+            db.collection('items').where('category', '==', emotion)
+                .get()
+                .then((querySnapshot) => {
+                    const items = [];
+                    querySnapshot.forEach((doc) => {
+                        items.push({ id: doc.id, ...doc.data() });
+                    });
+                    if (sortOption === 'priceLowToHigh') {
+                        items.sort((a, b) => a.price - b.price);
+                    } else if (sortOption === 'priceHighToLow') {
+                        items.sort((a, b) => b.price - a.price);
+                    } else if (sortOption === 'nameAZ') {
+                        items.sort((a, b) => a.name.localeCompare(b.name));
+                    } else if (sortOption === 'nameZA') {
+                        items.sort((a, b) => b.name.localeCompare(a.name));
+                    } else if (sortOption === 'categoryAZ') {
+                        items.sort((a, b) => a.category.localeCompare(b.category));
+                    } else if (sortOption === 'categoryZA') {
+                        items.sort((a, b) => b.category.localeCompare(a.category));
+                    } else if (sortOption === 'availability') {
+                        items.sort((a, b) => a.availability.localeCompare(b.availability));
+                    }
+                    const emotionDetails = document.getElementById('emotionDetails');
+                    emotionDetails.innerHTML = '';
+                    items.forEach((item) => {
+                        if (item.price >= priceRange[0] && item.price <= priceRange[1]) {
+                            var itemDiv = document.createElement('div');
+                            itemDiv.classList.add('card');
+                            itemDiv.innerHTML = `
+                                <h2>${item.name}</h2>
+                                <img src="${item.itemImage}" alt="${item.name}">
+                                <p>Description: ${item.description}</p>
+                                <p>Price: ${item.price}</p>
+                                <p>Category: ${item.category}</p>
+                                <p>Availability: ${item.availability}</p>
+                                <button class="button-64 buy-now" data-itemid="${item.id}" role="button"><span class="text">Buy now</span></button>
+                                <div class="card-details">
+                                    <!-- Additional details here -->
+                                </div>
+                            `;
+                            emotionDetails.appendChild(itemDiv);
+
+                            itemDiv.querySelector('.buy-now').addEventListener('click', function () {
+                                const itemId = item.id;
+                                window.location.href = `checkout.html?itemId=${itemId}`;
+                            });
+
+                            itemDiv.addEventListener('click', function () {
+                                const details = itemDiv.querySelector('.card-details');
+                                details.style.display = details.style.display === 'none' ? 'block' : 'none';
+                            });
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error getting documents: ', error);
+                })
+                .finally(() => {
+                    document.getElementById('loadingOverlay').style.display = 'none'; // Hide loading overlay
+                });
+        }
+
+        renderItems('priceLowToHigh', [0, 10000]);
+
+        document.getElementById('sort').addEventListener('change', function () {
+            var sortOption = this.value;
+            var priceRange = [parseInt(document.getElementById('priceRange').min), parseInt(document.getElementById('priceRange').max)];
+            renderItems(sortOption, priceRange);
+        });
+
+        document.getElementById('priceRange').addEventListener('input', function () {
+            var priceOutput = document.getElementById('priceOutput');
+            var priceRange = this.value;
+            priceOutput.textContent = priceRange;
+            var sortOption = document.getElementById('sort').value;
+            renderItems(sortOption, [parseInt(document.getElementById('priceRange').min), parseInt(priceRange)]);
+        });
+
+        function goToHomePage() {
+            window.location.href = "index.html";
+        }
+
+        function gotoOrdersPage() {
+            window.location.href = "orders.html";
+        }
+
+        function gotoOthersPage() {
+            window.location.href = "secondpage.html?emotion=others";
+        }
+    </script>
+</body>
+
+</html>

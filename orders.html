@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="orders.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+    <div class="mainheader" style="margin-bottom: 50px;">
+        <header>
+            <div class="headDiv1">
+                <h1 onclick="goToHomePage()">Secret Gifts</h1>
+            </div>
+            <div class="headDiv2">
+                <h4 onclick="goToHomePage()">Home</h4>
+                <h4>Shop</h4>
+                <h4 onclick="gotoOrdersPage()">Orders</h4>
+                <h4>Contact</h4>
+            </div>
+            <div class="headDiv3">
+                <h1 onclick="gotoOthersPage()">Hurrah</h1>
+            </div>
+        </header>
+    </div>
+    <div class="search-container">
+        <div style="margin-bottom: 50px;">
+            <input type="text" id="phoneNumber" placeholder="Enter Phone Number">
+            <button onclick="searchOrders()">Search</button>
+        </div>
+        <div class="order-container">
+            <div id="orderDetails">
+                <!-- Orders will be displayed here -->
+            </div>
+            <div id="loadingIndicator" style="display: none; color: white;">Loading...</div>
+        </div>
+    </div>
+    <div class="hor-Line"></div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-heading">
+                <h4>Secret Gifts</h4>
+            </div>
+            <div class="footer-links">
+                <h4>Home</h4>
+                <h4>Shop</h4>
+                <h4>Occasions</h4>
+                <h4>Contact</h4>
+            </div>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-info">
+            <p>&copy; 2024 Secret Gifts. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPwCvhAiDvEDrkcYiVxb4NBVXH8RbjCfo",
+            authDomain: "giftwish-express.firebaseapp.com",
+            projectId: "giftwish-express",
+            storageBucket: "giftwish-express.appspot.com",
+            messagingSenderId: "710515976717",
+            appId: "1:710515976717:web:62a83bb498295fb1e80344",
+            measurementId: "G-DGS43RPDDD"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        function searchOrders() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            document.getElementById('loadingIndicator').style.display = 'block';
+
+            document.getElementById('orderDetails').innerHTML = '';
+
+            db.collection('orders').where('phone', '==', phoneNumber).get()
+                .then((querySnapshot) => {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    querySnapshot.forEach(async (doc) => {
+                        const orderData = doc.data();
+                        const orderCard = document.createElement('div');
+                        orderCard.classList.add('order-card');
+                        orderCard.onclick = function () { goToItemDetails(orderData.itemId); };
+
+                        const fileList = await storage.ref(`item_images/${orderData.itemId}`).list();
+                        const filename = fileList.items[0].name;
+                        const imageUrl = await storage.ref(`item_images/${orderData.itemId}/${filename}`).getDownloadURL();
+
+                        orderCard.innerHTML = `
+                            <img src="${imageUrl}" alt="Item Image" class="item-image">
+                            <p>Name: ${orderData.name}</p>
+                            <p>Address: ${orderData.address}</p>
+                            <p>City: ${orderData.city}</p>
+                            <p>State: ${orderData.state}</p>
+                            <p>Pincode: ${orderData.pincode}</p>
+                            <p>Item ID: ${orderData.itemId}</p>
+                            <p>Customization: ${orderData.customization}</p>
+                            <p>Paid Amount: ${orderData.paidAmount}</p>
+                            <p>Payment ID: ${orderData.paymentId}</p>
+                            <p>Status: ${orderData.status}</p>
+                            <p>Timestamp: ${orderData.timestamp.toDate()}</p>
+                        `;
+                        document.getElementById('orderDetails').appendChild(orderCard);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error searching orders:', error);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                });
+        }
+
+        function goToHomePage() {
+            window.location.href = "index.html";
+        }
+
+        function gotoOrdersPage() {
+            window.location.href = "orders.html";
+        }
+
+        function goToItemDetails(itemId) {
+            window.location.href = `checkout.html?itemId=${itemId}`;
+        }
+
+        function gotoOthersPage() {
+            window.location.href = "secondpage.html?emotion=others";
+        }
+    </script>
+</body>
+
+</html>
